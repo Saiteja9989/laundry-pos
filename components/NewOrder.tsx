@@ -49,7 +49,8 @@ export default function NewOrder({ setActiveTab }: { setActiveTab: (tab: string)
   const [listening, setListening]     = useState(false);
   const [placed, setPlaced]           = useState<{ orderId: string } | null>(null);
   const [qrUrl, setQrUrl]             = useState("");
-  const recogRef = useRef<SpeechRecognition | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recogRef = useRef<any>(null);
 
   const addItem    = () => setItems(p => [...p, { garment: "Shirt", service: "Wash & Fold", qty: 1, price: 0 }]);
   const removeItem = (i: number) => { if (items.length === 1) return; setItems(p => p.filter((_, x) => x !== i)); };
@@ -77,7 +78,8 @@ export default function NewOrder({ setActiveTab }: { setActiveTab: (tab: string)
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) { toast.error("Use Chrome for voice input"); return; }
     const r = new SR(); r.continuous = true; r.interimResults = true; r.lang = "en-IN";
-    r.onresult = (e: SpeechRecognitionEvent) => setDamageNotes(Array.from(e.results).map(x => x[0].transcript).join(" "));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    r.onresult = (e: any) => setDamageNotes(Array.from(e.results).map((x: any) => x[0].transcript).join(" "));
     r.onend = () => setListening(false);
     r.start(); recogRef.current = r; setListening(true);
     toast("Listening… speak now", { icon: "🎙️" });
