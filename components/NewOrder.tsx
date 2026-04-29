@@ -38,7 +38,7 @@ const PAYMENT_OPTIONS = [
 
 export default function NewOrder({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
   const [customer, setCustomer]       = useState({ name: "", phone: "", email: "" });
-  const [items, setItems]             = useState<Item[]>([{ garment: "Shirt", service: "Wash & Fold", qty: 1, price: 0 }]);
+  const [items, setItems]             = useState<Item[]>([{ garment: "Shirt", service: "Wash & Fold", qty: 1, price: 50 }]);
   const [express, setExpress]         = useState(false);
   const [paymentMethod, setPayment]   = useState("Cash");
   const [damageNotes, setDamageNotes] = useState("");
@@ -52,21 +52,35 @@ export default function NewOrder({ setActiveTab }: { setActiveTab: (tab: string)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recogRef = useRef<any>(null);
 
-  const addItem    = () => setItems(p => [...p, { garment: "Shirt", service: "Wash & Fold", qty: 1, price: 0 }]);
+  const addItem    = () => setItems(p => [...p, { garment: "Shirt", service: "Wash & Fold", qty: 1, price: PRICE_TABLE["Shirt"]["Wash & Fold"] }]);
   const removeItem = (i: number) => { if (items.length === 1) return; setItems(p => p.filter((_, x) => x !== i)); };
-  const setItem    = (i: number, k: keyof Item, v: string | number) => setItems(p => p.map((it, x) => x === i ? { ...it, [k]: v } : it));
+  const setItem    = (i: number, k: keyof Item, v: string | number) => setItems(p => p.map((it, x) => {
+    if (x !== i) return it;
+    const updated = { ...it, [k]: v };
+    // Auto-apply price from PRICE_TABLE whenever garment or service changes
+    if (k === "garment" || k === "service") {
+      updated.price = PRICE_TABLE[updated.garment]?.[updated.service] ?? it.price;
+    }
+    return updated;
+  }));
 
   const subtotal   = items.reduce((s, i) => s + i.price * i.qty, 0);
   const expressFee = express ? Math.round(subtotal * 0.3) : 0;
   const total      = subtotal + expressFee;
 
+  // Always compute live breakdown from current items
+  const liveTip = items.map(it => `• ${it.qty}× ${it.garment} (${it.service}) — ₹${it.price}/pc = ₹${it.price * it.qty}`).join("\n");
+
   const applyAiPrices = async () => {
     setAiLoading(true); setAiTip("");
+    // Apply prices from PRICE_TABLE instantly
+    setItems(p => p.map(it => ({ ...it, price: PRICE_TABLE[it.garment]?.[it.service] ?? it.price })));
     try {
       const res  = await fetch("/api/ai-price", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items }) });
       const data = await res.json();
-      setAiTip(data.result);
-      setItems(p => p.map(it => ({ ...it, price: PRICE_TABLE[it.garment]?.[it.service] ?? it.price })));
+      // Only show the AI tip line, not the full breakdown (we compute that ourselves)
+      const tipLine = data.result?.split("\n").find((l: string) => l.startsWith("💡"));
+      setAiTip(tipLine ?? "");
       toast.success("AI prices applied!");
     } catch { toast.error("Could not fetch AI prices."); }
     setAiLoading(false);
@@ -308,12 +322,11 @@ Manager Signature: ___________________  Date: ${today}`);
                   {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   {aiLoading ? "AI calculating..." : "AI Price Estimator"}
                 </button>
-                {aiTip && (
-                  <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-xl animate-fade-in max-w-xs truncate">
-                    <Sparkles className="w-3 h-3 shrink-0" />
-                    <span className="truncate">{aiTip.split("\n")[0]}</span>
-                  </div>
-                )}
+                {/* Live breakdown — always shows current items */}
+                <div className="flex items-start gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-xl animate-fade-in max-w-sm">
+                  <Sparkles className="w-3 h-3 shrink-0 mt-0.5" />
+                  <span className="whitespace-pre-line">{liveTip}{aiTip ? `\n${aiTip}` : ""}</span>
+                </div>
               </div>
             </div>
           </div>
