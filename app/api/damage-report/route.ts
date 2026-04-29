@@ -1,10 +1,7 @@
 import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
 
-const client = new OpenAI({
-  baseURL: "https://integrate.api.nvidia.com/v1",
-  apiKey: process.env.NVIDIA_API_KEY!,
-});
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,8 +11,13 @@ export async function POST(req: NextRequest) {
       .map((i: { garment: string; qty: number }) => `${i.qty}x ${i.garment}`)
       .join(", ");
 
+    const client = new OpenAI({
+      baseURL: "https://api.groq.com/openai/v1",
+      apiKey: process.env.GROQ_API_KEY!,
+    });
+
     const completion = await client.chat.completions.create({
-      model: "meta/llama-3.1-8b-instruct",
+      model: "llama-3.1-8b-instant",
       messages: [
         {
           role: "user",
