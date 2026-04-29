@@ -6,8 +6,8 @@ import { connectDB } from "@/lib/mongodb";
 import Order from "@/lib/models/Order";
 
 const client = new OpenAI({
-  baseURL: "https://integrate.api.nvidia.com/v1",
-  apiKey: process.env.NVIDIA_API_KEY!,
+  baseURL: "https://api.groq.com/openai/v1",
+  apiKey: process.env.GROQ_API_KEY!,
 });
 
 export async function POST(req: NextRequest) {
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
   // Ask AI to parse query into structured intent
   const completion = await client.chat.completions.create({
-    model: "meta/llama-3.1-8b-instruct",
+    model: "llama-3.1-8b-instant",
     messages: [
       {
         role: "user",

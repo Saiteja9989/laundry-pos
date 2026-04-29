@@ -7,8 +7,8 @@ import Order from "@/lib/models/Order";
 import Customer from "@/lib/models/Customer";
 
 const client = new OpenAI({
-  baseURL: "https://integrate.api.nvidia.com/v1",
-  apiKey: process.env.NVIDIA_API_KEY!,
+  baseURL: "https://api.groq.com/openai/v1",
+  apiKey: process.env.GROQ_API_KEY!,
 });
 
 export async function POST(req: NextRequest) {
@@ -58,7 +58,7 @@ Answer in 1-3 short sentences. Be specific with numbers. If asked about WhatsApp
 `.trim();
 
   const completion = await client.chat.completions.create({
-    model: "meta/llama-3.1-8b-instruct",
+    model: "llama-3.1-8b-instant",
     messages: [
       { role: "system", content: context },
       { role: "user", content: message },
