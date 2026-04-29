@@ -1,10 +1,6 @@
-import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
 
-const client = new OpenAI({
-  baseURL: "https://integrate.api.nvidia.com/v1",
-  apiKey: process.env.NVIDIA_API_KEY!,
-});
+export const maxDuration = 60;
 
 const PRICE_TABLE: Record<string, Record<string, number>> = {
   "Shirt":    { "Wash & Fold": 50,  "Wash & Iron": 70,  "Dry Clean": 120, "Steam Iron": 40,  "Stain Removal": 100 },
@@ -19,44 +15,32 @@ const PRICE_TABLE: Record<string, Record<string, number>> = {
   "Other":    { "Wash & Fold": 80,  "Wash & Iron": 100, "Dry Clean": 180, "Steam Iron": 70,  "Stain Removal": 150 },
 };
 
+const TIPS: Record<string, string> = {
+  "Dry Clean": "💡 Suggest fabric protection spray add-on for dry cleaned items — increases order value by ₹50-100.",
+  "Stain Removal": "💡 Offer a free re-clean guarantee for stain removal — builds trust and repeat customers.",
+  "Wash & Iron": "💡 Bundle wash & iron with folding service for ₹20 extra — customers love convenience.",
+  "Steam Iron": "💡 Steam iron customers often need dry clean too — mention the combo discount.",
+  "Wash & Fold": "💡 Offer monthly subscription plans to wash & fold regulars — guaranteed recurring revenue.",
+};
+
 export async function POST(req: NextRequest) {
   const { items } = await req.json();
 
-  let lines: string[] = [];
   let total = 0;
-  const orderSummary: string[] = [];
+  const lines: string[] = [];
+  const services = new Set<string>();
 
   for (const item of items) {
-    const garment = item.garment as string;
-    const service = item.service as string;
-    const qty = item.qty as number;
-    const unitPrice = PRICE_TABLE[garment]?.[service] ?? 100;
-    const itemTotal = unitPrice * qty;
+    const unitPrice = PRICE_TABLE[item.garment]?.[item.service] ?? 80;
+    const itemTotal = unitPrice * item.qty;
     total += itemTotal;
-    lines.push(`• ${qty}x ${garment} (${service}) — ₹${unitPrice}/piece = ₹${itemTotal}`);
-    orderSummary.push(`${qty}x ${garment} for ${service}`);
+    lines.push(`• ${item.qty}x ${item.garment} (${item.service}) — ₹${unitPrice}/pc = ₹${itemTotal}`);
+    services.add(item.service);
   }
 
-  const breakdown = lines.join("\n") + `\n\n─────────────────\nTotal: ₹${total}`;
+  const primaryService = [...services][0] ?? "Wash & Fold";
+  const tip = TIPS[primaryService] ?? "💡 Ask the customer if they have more items — bulk orders get priority processing.";
+  const result = lines.join("\n") + `\n\n─────────────────\nTotal: ₹${total}\n\n${tip}`;
 
-  // AI tip based on order
-  try {
-    const completion = await client.chat.completions.create({
-      model: "meta/llama-3.1-8b-instruct",
-      messages: [
-        {
-          role: "user",
-          content: `A laundry shop received this order: ${orderSummary.join(", ")}. Total: ₹${total}.
-Give ONE short smart tip (1-2 sentences) to upsell or improve service quality for this specific order. Be practical and specific. No greetings, just the tip.`,
-        },
-      ],
-      temperature: 0.5,
-      max_tokens: 80,
-    });
-    const tip = completion.choices[0]?.message?.content?.trim() ?? "";
-    const result = breakdown + (tip ? `\n\n💡 AI Tip: ${tip}` : "");
-    return NextResponse.json({ result });
-  } catch {
-    return NextResponse.json({ result: breakdown });
-  }
+  return NextResponse.json({ result });
 }

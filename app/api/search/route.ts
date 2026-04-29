@@ -1,5 +1,7 @@
 import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
+
+export const maxDuration = 60;
 import { connectDB } from "@/lib/mongodb";
 import Order from "@/lib/models/Order";
 
