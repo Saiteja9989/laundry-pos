@@ -98,12 +98,12 @@ export default function Home() {
               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
               <span className="text-[11px] font-semibold text-gray-600">System Online</span>
             </div>
-            <p className="text-[10px] text-gray-400">MongoDB · NVIDIA AI · Active</p>
+            <p className="text-[10px] text-gray-400">MongoDB · Groq AI · Active</p>
           </div>
           <div className="flex items-center gap-2.5 px-1">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-800 to-black text-white flex items-center justify-center text-xs font-bold shadow-sm">M</div>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-800 to-black text-white flex items-center justify-center text-xs font-bold shadow-sm">Q</div>
             <div>
-              <p className="text-xs font-semibold text-gray-800">Manager</p>
+              <p className="text-xs font-semibold text-gray-800">Quick Dry Cleaning</p>
               <p className="text-[10px] text-gray-400">Hyderabad</p>
             </div>
           </div>
